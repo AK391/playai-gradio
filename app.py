@@ -1,7 +1,7 @@
 import gradio as gr
-import openai_gradio
+import pyht_gradio
 
 gr.load(
-    name='gpt-4o-2024-11-20',
-    src=openai_gradio.registry,
+    name='Play3.0-mini-http',
+    src=pyht_gradio.registry,
 ).launch()

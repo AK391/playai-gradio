@@ -1,90 +1,71 @@
-# `openai-gradio`
+# `pyht-gradio`
 
-is a Python package that makes it very easy for developers to create machine learning apps that are powered by OpenAI's API.
+is a Python package that makes it easy for developers to create text-to-speech apps powered by PlayHT's API.
 
 # Installation
 
-You can install `openai-gradio` directly using pip:
+You can install `pyht-gradio` directly using pip:
 
 ```bash
-pip install openai-gradio
+pip install pyht-gradio
 ```
-
-That's it! 
 
 # Basic Usage
 
-Just like if you were to use the `openai` API, you should first save your OpenAI API key to this environment variable:
+First, save your PlayHT credentials as environment variables:
 
-```
-export OPENAI_API_KEY=<your token>
+```bash
+export PLAY_HT_API_KEY=<your api key>
+export PLAY_HT_USER_ID=<your user id>
 ```
 
 Then in a Python file, write:
 
 ```python
 import gradio as gr
-import openai_gradio
+import pyht_gradio
 
 gr.load(
-    name='gpt-4-turbo',
-    src=openai_gradio.registry,
+    name='Play3.0-mini-http',
+    src=pyht_gradio.registry,
 ).launch()
 ```
 
-Run the Python file, and you should see a Gradio Interface connected to the model on OpenAI!
-
-![ChatInterface](chatinterface.png)
+Run the Python file, and you should see a Gradio Interface connected to PlayHT's text-to-speech service!
 
 # Customization 
 
-Once you can create a Gradio UI from an OpenAI endpoint, you can customize it by setting your own input and output components, or any other arguments to `gr.Interface`. For example, the screenshot below was generated with:
-
-```py
-import gradio as gr
-import openai_gradio
-
-gr.load(
-    name='gpt-4-turbo',
-    src=openai_gradio.registry,
-    title='OpenAI-Gradio Integration',
-    description="Chat with GPT-4-turbo model.",
-    examples=["Explain quantum gravity to a 5-year old.", "How many R are there in the word Strawberry?"]
-).launch()
-```
-![ChatInterface with customizations](chatinterface_with_customization.png)
-
-# Composition
-
-Or use your loaded Interface within larger Gradio Web UIs, e.g.
+You can customize the interface by setting your own title, description, and examples:
 
 ```python
 import gradio as gr
-import openai_gradio
+import pyht_gradio
 
-with gr.Blocks() as demo:
-    with gr.Tab("GPT-4-turbo"):
-        gr.load('gpt-4-turbo', src=openai_gradio.registry)
-    with gr.Tab("GPT-3.5-turbo"):
-        gr.load('gpt-3.5-turbo', src=openai_gradio.registry)
-
-demo.launch()
+gr.load(
+    name='Play3.0-mini-http',
+    src=pyht_gradio.registry,
+    title='PlayHT-Gradio Integration',
+    description="Convert text to speech using PlayHT's models.",
+    examples=["Hello world!", "The quick brown fox jumps over the lazy dog."]
+).launch()
 ```
 
-# Under the Hood
+# Supported Voice Engines
 
-The `openai-gradio` Python library has two dependencies: `openai` and `gradio`. It defines a "registry" function `openai_gradio.registry`, which takes in a model name and returns a Gradio app.
+The following PlayHT voice engines are supported:
 
-# Supported Models in OpenAI
+- `Play3.0-mini-http`: Latest multilingual model, streaming over HTTP (default)
+- `Play3.0-mini-ws`: Latest multilingual model, streaming over WebSockets
+- `Play3.0-mini-grpc`: Latest multilingual model, streaming over gRPC (for Play On-Prem)
+- `PlayHT2.0-turbo`: Legacy English-only model, streaming over gRPC
 
-All chat API models supported by OpenAI are compatible with this integration. For a comprehensive list of available models and their specifications, please refer to the [OpenAI Models documentation](https://platform.openai.com/docs/models).
+# Authentication
 
--------
+If you are getting authentication errors, you can also set your credentials directly in your Python code:
 
-Note: if you are getting a 401 authentication error, then the OpenAI API Client is not able to get the API token from the environment variable. This happened to me as well, in which case save it in your Python session, like this:
-
-```py
+```python
 import os
 
-os.environ["OPENAI_API_KEY"] = ...
+os.environ["PLAY_HT_API_KEY"] = "your-api-key"
+os.environ["PLAY_HT_USER_ID"] = "your-user-id"
 ```

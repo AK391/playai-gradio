@@ -1,2 +1,3 @@
-openai
-gradio==5.0.0b5
+pyht
+gradio==5.5.0
+"gradio_webrtc[vad]"
