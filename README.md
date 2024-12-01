@@ -1,13 +1,13 @@
-# `pyht-gradio`
+# `playai-gradio`
 
-is a Python package that makes it easy for developers to create text-to-speech apps powered by PlayHT's API.
+is a Python package that makes it easy for developers to create text-to-speech apps powered by PlayAI's API.
 
 # Installation
 
-You can install `pyht-gradio` directly using pip:
+You can install `playai-gradio` directly using pip:
 
 ```bash
-pip install pyht-gradio
+pip install playai-gradio
 ```
 
 # Basic Usage
