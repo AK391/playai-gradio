@@ -12,26 +12,26 @@ pip install pyht-gradio
 
 # Basic Usage
 
-First, save your PlayHT credentials as environment variables:
+First, save your Play.ai credentials as environment variables:
 
 ```bash
-export PLAY_HT_API_KEY=<your api key>
-export PLAY_HT_USER_ID=<your user id>
+export PLAYAI_API_KEY=<your api key>
+export PLAYAI_USER_ID=<your user id>
 ```
 
 Then in a Python file, write:
 
 ```python
 import gradio as gr
-import pyht_gradio
+import playai_gradio
 
 gr.load(
-    name='Play3.0-mini-http',
-    src=pyht_gradio.registry,
+    name='PlayDialog',
+    src=playai_gradio.registry,
 ).launch()
 ```
 
-Run the Python file, and you should see a Gradio Interface connected to PlayHT's text-to-speech service!
+Run the Python file, and you should see a Gradio Interface connected to Play.ai's text-to-speech service!
 
 # Customization 
 
@@ -39,25 +39,33 @@ You can customize the interface by setting your own title, description, and exam
 
 ```python
 import gradio as gr
-import pyht_gradio
+import playai_gradio
 
 gr.load(
-    name='Play3.0-mini-http',
-    src=pyht_gradio.registry,
-    title='PlayHT-Gradio Integration',
-    description="Convert text to speech using PlayHT's models.",
+    name='PlayDialog',
+    src=playai_gradio.registry,
+    title='Play.ai-Gradio Integration',
+    description="Convert text to speech using Play.ai's models.",
     examples=["Hello world!", "The quick brown fox jumps over the lazy dog."]
 ).launch()
 ```
 
-# Supported Voice Engines
+# Supported Models and Features
 
-The following PlayHT voice engines are supported:
+The following Play.ai models are supported:
 
-- `Play3.0-mini-http`: Latest multilingual model, streaming over HTTP (default)
-- `Play3.0-mini-ws`: Latest multilingual model, streaming over WebSockets
-- `Play3.0-mini-grpc`: Latest multilingual model, streaming over gRPC (for Play On-Prem)
-- `PlayHT2.0-turbo`: Legacy English-only model, streaming over gRPC
+- `PlayDialog`: For multi-turn dialogue with two voices
+- `Play3.0-mini`: For single-voice text-to-speech
+
+Available voices include Angelo, Arsenio, Cillian, Timo, and many others, each with specific accent, gender, age, and style characteristics.
+
+Key features include:
+- Voice selection with detailed characteristics
+- Multiple output formats (mp3, wav, ogg, etc.)
+- Speed and sample rate adjustment
+- Temperature and seed control
+- Multi-language support
+- Model-specific parameters for fine-tuning
 
 # Authentication
 
@@ -66,6 +74,6 @@ If you are getting authentication errors, you can also set your credentials dire
 ```python
 import os
 
-os.environ["PLAY_HT_API_KEY"] = "your-api-key"
-os.environ["PLAY_HT_USER_ID"] = "your-user-id"
+os.environ["PLAYAI_API_KEY"] = "your-api-key"
+os.environ["PLAYAI_USER_ID"] = "your-user-id"
 ```
