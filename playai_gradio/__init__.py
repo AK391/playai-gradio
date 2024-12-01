@@ -5,6 +5,9 @@ import json
 
 __version__ = "0.0.1"
 
+# API endpoint
+API_URL = "https://api.play.ai/api/v1/tts/stream"
+
 # Move VOICES dictionary to module level
 VOICES = {
     "Angelo": {"id": "s3://voice-cloning-zero-shot/baf1ef41-36b6-428c-9bdf-50ba54682bd8/original/manifest.json", "accent": "US", "gender": "M", "age": "Young", "style": "Conversational"},
@@ -25,8 +28,16 @@ VOICES = {
 }
 
 def get_fn(voice_id: str, api_key: str, user_id: str):
-    def chat_response(message, history, voice_selection, model_selection, quality="draft", text_guidance=1):
-        """Modified to work with ChatInterface"""
+    def chat_response(message, history, voice_selection, model_selection, 
+                     # Common parameters
+                     output_format, speed, sample_rate, seed, temperature, language,
+                     # PlayDialog specific parameters
+                     voice2_selection=None, turn_prefix=None, turn_prefix2=None,
+                     prompt=None, prompt2=None,
+                     voice_conditioning_seconds=20, voice_conditioning_seconds2=20,
+                     # Play3.0-mini specific parameters
+                     quality=None, voice_guidance=None, style_guidance=None, text_guidance=None):
+        """Modified to work with ChatInterface with all available options"""
         if not message:
             return "Please enter some text first"
         
@@ -35,23 +46,48 @@ def get_fn(voice_id: str, api_key: str, user_id: str):
         selected_voice = voice_selection.split(" (")[0]
         voice_id = VOICES[selected_voice]["id"]
         
-        # Play.ai API configuration
-        url = "https://api.play.ai/api/v1/tts/stream"
+        # Get voice2_id if provided
+        voice2_id = None
+        if voice2_selection and voice2_selection != "None":
+            voice2_name = voice2_selection.split(" (")[0]
+            voice2_id = VOICES[voice2_name]["id"]
+        
+        # Base payload
         payload = {
             "model": model_selection,
             "text": message,
             "voice": voice_id,
-            "quality": quality,
-            "outputFormat": "mp3",
-            "speed": 1,
-            "sampleRate": 24000,
-            "seed": None,
-            "temperature": None,
-            "voiceGuidance": None,
-            "styleGuidance": None,
-            "textGuidance": text_guidance,
-            "language": "english"
+            "outputFormat": output_format,
+            "speed": speed,
+            "sampleRate": sample_rate,
+            "seed": seed if seed != 0 else None,
+            "temperature": temperature if temperature != 0 else None,
+            "language": language if language != "auto" else None
         }
+        
+        # Add model-specific parameters
+        if model_selection == "PlayDialog":
+            if voice2_id:
+                payload["voice2"] = voice2_id
+            if turn_prefix:
+                payload["turnPrefix"] = turn_prefix
+            if turn_prefix2:
+                payload["turnPrefix2"] = turn_prefix2
+            if prompt:
+                payload["prompt"] = prompt
+            if prompt2:
+                payload["prompt2"] = prompt2
+            if voice_conditioning_seconds != 20:
+                payload["voiceConditioningSeconds"] = voice_conditioning_seconds
+            if voice_conditioning_seconds2 != 20:
+                payload["voiceConditioningSeconds2"] = voice_conditioning_seconds2
+        else:  # Play3.0-mini
+            payload.update({
+                "quality": quality,
+                "voiceGuidance": voice_guidance if voice_guidance != 0 else None,
+                "styleGuidance": style_guidance if style_guidance != 0 else None,
+                "textGuidance": text_guidance if text_guidance != 0 else None
+            })
         
         headers = {
             "AUTHORIZATION": api_key,
@@ -59,8 +95,8 @@ def get_fn(voice_id: str, api_key: str, user_id: str):
             "Content-Type": "application/json"
         }
 
-        # Generate TTS response
-        response = requests.post(url, json=payload, headers=headers)
+        # Generate TTS response using the global API_URL
+        response = requests.post(API_URL, json=payload, headers=headers)
         
         # Save the audio response with a unique filename
         response_path = f"response_{len(history)}.mp3"
@@ -101,6 +137,7 @@ def registry(name: str, token: str | None = None, **kwargs):
         title="Play.ai Text-to-Speech Chatbot",
         description="A chatbot that converts text to speech using Play.ai's API",
         additional_inputs=[
+            # Common inputs
             gr.Dropdown(
                 choices=voice_choices,
                 value=voice_choices[0],
@@ -111,17 +148,115 @@ def registry(name: str, token: str | None = None, **kwargs):
                 value="PlayDialog",
                 label="Model Selection"
             ),
-            gr.Radio(
-                choices=["draft", "standard", "high"],
-                value="draft",
-                label="Quality"
+            gr.Dropdown(
+                choices=["mp3", "mulaw", "raw", "wav", "ogg", "flac"],
+                value="mp3",
+                label="Output Format"
+            ),
+            gr.Slider(
+                minimum=0.1,
+                maximum=5.0,
+                value=1.0,
+                step=0.1,
+                label="Speed (0.1-5.0)"
+            ),
+            gr.Slider(
+                minimum=8000,
+                maximum=48000,
+                value=24000,
+                step=1000,
+                label="Sample Rate (8000-48000 Hz)"
+            ),
+            gr.Number(
+                value=0,
+                label="Seed (0 for random, >0 for reproducible results)"
             ),
             gr.Slider(
                 minimum=0,
-                maximum=1,
-                value=1,
+                maximum=2.0,
+                value=0,
                 step=0.1,
-                label="Text Guidance"
+                label="Temperature (0-2, 0 for default)"
+            ),
+            gr.Dropdown(
+                choices=["auto"] + [
+                    "afrikaans", "albanian", "amharic", "arabic", "bengali", 
+                    "bulgarian", "catalan", "croatian", "czech", "danish", "dutch", 
+                    "english", "french", "galician", "german", "greek", "hebrew", 
+                    "hindi", "hungarian", "indonesian", "italian", "japanese", 
+                    "korean", "malay", "mandarin", "polish", "portuguese", "russian", 
+                    "serbian", "spanish", "swedish", "tagalog", "thai", "turkish", 
+                    "ukrainian", "urdu", "xhosa"
+                ],
+                value="english",
+                label="Language"
+            ),
+            # PlayDialog specific inputs
+            gr.Dropdown(
+                choices=["None"] + voice_choices,
+                value="None",
+                label="Voice 2 Selection (for PlayDialog multi-turn dialogue)"
+            ),
+            gr.Textbox(
+                value="",
+                label="Turn Prefix (for voice 1)",
+                placeholder="e.g., 'Speaker 1:'"
+            ),
+            gr.Textbox(
+                value="",
+                label="Turn Prefix 2 (for voice 2)",
+                placeholder="e.g., 'Speaker 2:'"
+            ),
+            gr.Textbox(
+                value="",
+                label="Prompt (for voice 1)",
+                placeholder="Optional prompt for voice 1"
+            ),
+            gr.Textbox(
+                value="",
+                label="Prompt 2 (for voice 2)",
+                placeholder="Optional prompt for voice 2"
+            ),
+            gr.Slider(
+                minimum=1,
+                maximum=60,
+                value=20,
+                step=1,
+                label="Voice Conditioning Seconds (voice 1)"
+            ),
+            gr.Slider(
+                minimum=1,
+                maximum=60,
+                value=20,
+                step=1,
+                label="Voice Conditioning Seconds (voice 2)"
+            ),
+            # Play3.0-mini specific inputs
+            gr.Dropdown(
+                choices=["draft", "low", "medium", "high", "premium"],
+                value="draft",
+                label="Quality (Play3.0-mini only)"
+            ),
+            gr.Slider(
+                minimum=0,
+                maximum=6.0,
+                value=0,
+                step=0.1,
+                label="Voice Guidance (1-6, Play3.0-mini only)"
+            ),
+            gr.Slider(
+                minimum=0,
+                maximum=30.0,
+                value=0,
+                step=0.1,
+                label="Style Guidance (1-30, Play3.0-mini only)"
+            ),
+            gr.Slider(
+                minimum=0,
+                maximum=2.0,
+                value=1.0,
+                step=0.1,
+                label="Text Guidance (1-2, Play3.0-mini only)"
             )
         ],
         **kwargs
