@@ -1,7 +1,7 @@
 import gradio as gr
-import pyht_gradio
+import playai_gradio
 
 gr.load(
-    name='Play3.0-mini-http',
-    src=pyht_gradio.registry,
+    name='PlayDialog',
+    src=playai_gradio.registry,
 ).launch()
